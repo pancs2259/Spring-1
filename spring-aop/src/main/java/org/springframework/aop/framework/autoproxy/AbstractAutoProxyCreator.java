@@ -112,7 +112,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	/** Default is global AdvisorAdapterRegistry. */
-	// 这里的 advisorAdapterRegistry 中主要是将 advice, MethodInterceptor 包装成 Advisor, 与将 Advisor 转成 MethodInterceptor
+	// 这里的 advisorAdapterRegistry 中主要是将 advice, MethodInterceptor 包装成 Advisor, 并将 Advisor 转成 MethodInterceptor
 	private AdvisorAdapterRegistry advisorAdapterRegistry = GlobalAdvisorAdapterRegistry.getInstance();
 
 	/**
@@ -243,11 +243,10 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 
 	@Override
 	public Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName) {
-		// 实例化一个Bean之前，可能直接
 		Object cacheKey = getCacheKey(beanClass, beanName);
 
 		if (!StringUtils.hasLength(beanName) || !this.targetSourcedBeans.contains(beanName)) {
-			// advisedBeans中存在就表示已经被代理了，或者根本就不用进行代理
+			// advisedBeans中存的是当前这个bean需不需要代理
 			if (this.advisedBeans.containsKey(cacheKey)) {
 				return null;
 			}
@@ -298,7 +297,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	}
 
 
-	// bean原始对象
+	// AService出现了循环依赖
 	@Override
 	public Object getEarlyBeanReference(Object bean, String beanName) {
 		Object cacheKey = getCacheKey(bean.getClass(), beanName); // beanName  aService
@@ -314,7 +313,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @see #getAdvicesAndAdvisorsForBean
 	 */
 	@Override
-	// 第6步所调用的方法
+	// 正常情况进行AOP的地方
 	public Object postProcessAfterInitialization(@Nullable Object bean, String beanName) {
 		if (bean != null) {
 			Object cacheKey = getCacheKey(bean.getClass(), beanName);
@@ -359,6 +358,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 * @return a proxy wrapping the bean, or the raw bean instance as-is
 	 */
 	protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
+		// 在当前targetSourcedBeans中存在的bean，表示在实例化之前就产生了代理对象
 		if (StringUtils.hasLength(beanName) && this.targetSourcedBeans.contains(beanName)) {
 			return bean;
 		}
@@ -496,8 +496,9 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			}
 		}
 
-		// 添加一些commonInterceptors
+
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
+
 		proxyFactory.addAdvisors(advisors);	// 向ProxyFactory中添加advisor
 		proxyFactory.setTargetSource(targetSource); // 被代理的对象
 		customizeProxyFactory(proxyFactory);
@@ -549,9 +550,12 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 	 */
 	protected Advisor[] buildAdvisors(@Nullable String beanName, @Nullable Object[] specificInterceptors) {
 		// Handle prototypes correctly...
+		// 获取AbstractAutoProxyCreator手动setInterceptorNames()所设置的Interceptors
+		// 因为是设置在AbstractAutoProxyCreator上的，所以是公用的
 		Advisor[] commonInterceptors = resolveInterceptorNames();
 
 		List<Object> allInterceptors = new ArrayList<>();
+		// 只有当specificInterceptors不为null时，allInterceptors中才会有值，最终才会进行代理
 		if (specificInterceptors != null) {
 			allInterceptors.addAll(Arrays.asList(specificInterceptors));
 			if (commonInterceptors.length > 0) {
@@ -585,6 +589,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		BeanFactory bf = this.beanFactory;
 		ConfigurableBeanFactory cbf = (bf instanceof ConfigurableBeanFactory ? (ConfigurableBeanFactory) bf : null);
 		List<Advisor> advisors = new ArrayList<>();
+
 		for (String beanName : this.interceptorNames) {
 			if (cbf == null || !cbf.isCurrentlyInCreation(beanName)) {
 				Assert.state(bf != null, "BeanFactory required for resolving interceptor names");

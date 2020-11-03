@@ -620,7 +620,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 3、填充属性 @Autowired
 			populateBean(beanName, mbd, instanceWrapper);
 
-			// 4、 初始化 和 BeanPostProcessor
+			// 4、 初始化 和 BeanPostProcessor 正常AOP
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -641,7 +641,7 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 				// 最终会添加到singletonObjects中去
 				if (exposedObject == bean) {
 					exposedObject = earlySingletonReference;
-				}
+			}
 				// 如果提前暴露的对象和经过了完整的生命周期后的对象不相等
 				// allowRawInjectionDespiteWrapping表示在循环依赖时，只能
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {
@@ -1261,15 +1261,15 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		}
 
 		// Candidate constructors for autowiring?
-//		 一个类有多个构造方法，那么到底哪些构造方法是可以拿来用的，Spring也提供了一个扩展点，程序员可以进行控制
-//		 利用beanPostProcessor来选取构造方法，如果返回值（ctors）不为空，则表示利用beanPostProcessor找到了候选的构造方法，那么则进行自动推断
-//		 如果当前bd是构造方法自动注入，那么也进行自动推断
-//		 如果当前bd中存在了构造方法参数值，那么也进行自动推断
-//		 如果是在getBean时指定了args, 那么也进行自动推断
 		Constructor<?>[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+
+		// 通过BeanPostProcessor找出了构造方法
+		// 或者BeanDefinition的autowire属性为AUTOWIRE_CONSTRUCTOR
+		// 或者BeanDefinition中指定了构造方法参数值
+		// 或者在getBean()时指定了args
 		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
 				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
-			// 从ctors中自动选择一个构造方法
+			// 进行构造方法推断并实例化
 			return autowireConstructor(beanName, mbd, ctors, args);
 		}
 
@@ -1468,7 +1468,8 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		// 是否在BeanDefinition中设置了属性值
 		PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
 
-		int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+		//  autowire属性
+		int resolvedAutowireMode = mbd.getResolvedAutowireMode();  // BeanDefinition AutowireMode
 		if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
 			// by_name是根据根据属性名字找bean
 			// by_type是根据属性所对应的set方法的参数类型找bean
@@ -1495,6 +1496,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		boolean hasInstAwareBpps = hasInstantiationAwareBeanPostProcessors();
 		boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
 
+
+		// @AUtowired注解的 AutowiredAnnotationBeanPostProcessor
+		// @Resource注解的 CommonAnnotationBeanPostProcessor
 		PropertyDescriptor[] filteredPds = null;
 		if (hasInstAwareBpps) {
 			if (pvs == null) {

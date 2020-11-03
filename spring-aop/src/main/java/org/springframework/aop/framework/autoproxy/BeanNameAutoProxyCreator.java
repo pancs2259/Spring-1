@@ -88,6 +88,7 @@ public class BeanNameAutoProxyCreator extends AbstractAutoProxyCreator {
 					mappedName = mappedName.substring(BeanFactory.FACTORY_BEAN_PREFIX.length());
 				}
 				if (isMatch(beanName, mappedName)) {
+					// 如果匹配，就会返回PROXY_WITHOUT_ADDITIONAL_INTERCEPTORS，后续会对当前beanName进行代理
 					return PROXY_WITHOUT_ADDITIONAL_INTERCEPTORS;
 				}
 				BeanFactory beanFactory = getBeanFactory();

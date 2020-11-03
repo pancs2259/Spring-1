@@ -72,7 +72,7 @@ public class InjectionMetadata {
 	private final Collection<InjectedElement> injectedElements;
 
 	@Nullable
-	private volatile Set<InjectedElement> checkedElements;
+	private volatile Set<InjectedElement> checkedElements;  // 存的某个类的所有的注入点
 
 
 	/**
@@ -166,7 +166,7 @@ public class InjectionMetadata {
 	 */
 	public abstract static class InjectedElement {
 
-		protected final Member member;
+		protected final Member member; // 方法，属性
 
 		protected final boolean isField;
 

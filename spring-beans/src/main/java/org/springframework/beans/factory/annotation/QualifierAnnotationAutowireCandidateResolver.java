@@ -179,7 +179,7 @@ public class QualifierAnnotationAutowireCandidateResolver extends GenericTypeAwa
 			boolean fallbackToMeta = false;
 			// 该注解是不是Qualifier注解, 或者是不是“继承了”Qualifier注解
 			if (isQualifier(type)) {
-				// 检查当前注解和bdHolder是否匹配，如果不匹配， fallbackToMeta=true， checkMeta=true
+				// 检查当前@Qualifier注解中配置的值和bdHolder是否匹配，如果不匹配， fallbackToMeta=true， checkMeta=true
 				if (!checkQualifier(bdHolder, annotation, typeConverter)) {
 					fallbackToMeta = true;
 				}

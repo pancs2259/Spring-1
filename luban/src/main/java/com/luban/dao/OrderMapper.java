@@ -1,11 +1,8 @@
 package com.luban.dao;
 
-import com.luban.entity.Luban;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
-@Mapper
-public interface UserMapper {
+public interface OrderMapper {
 
   @Select("select 'test'")
   String selectById();

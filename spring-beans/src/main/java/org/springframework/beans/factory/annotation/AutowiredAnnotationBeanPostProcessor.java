@@ -242,6 +242,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 	}
 
 
+	// 寻找注入点
 	@Override
 	public void postProcessMergedBeanDefinition(RootBeanDefinition beanDefinition, Class<?> beanType, String beanName) {
 		// 获取beanType中的注入点
@@ -391,6 +392,9 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 					// 如果存在添加了@Autowired的构造方法
 					if (!candidates.isEmpty()) {
+						// 分为两种请求，要么candidates中包含一个required等于true的构造方法
+						// 要么candidates中包含一个或多个required等于false的构造方法
+
 						// Add default constructor to list of optional constructors, as fallback.
 						// 如果没有指定required为true的构造方法，那么就把构造方法添加到candidates中去，后续一起进行推断
 						if (requiredConstructor == null) {
@@ -413,8 +417,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 						// 把candidates方法，两种情况，要么只有一个@Autowired(required=true)的构造方法，要么多个@Autowired(required=false)+一个无参构造方法
 						candidateConstructors = candidates.toArray(new Constructor<?>[0]);
 					}
-					// 如果candidates为空，表示没有构造方法上添加了@Autowired注解，并且只有一个构造方法，并且该构造方法的参数个数大于0
-					// 那么表示只有一个构造方法可用，直接方法
+					// 没有加了@Autowired注解的构造方法，那么则判断是不是只有一个有参的构造方法，如果是则返回
 					else if (rawCandidates.length == 1 && rawCandidates[0].getParameterCount() > 0) {
 						candidateConstructors = new Constructor<?>[] {rawCandidates[0]};
 					}
@@ -436,31 +439,19 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			}
 		}
 
-		// 总结一下determineCandidateConstructors这个方法到底在做什么？
-		// 首先，这个方法是BeanPostProcessor中的逻辑，所以它是一个插件，可有可无，比如现在这个类叫做AutowiredAnnotationBeanPostProcessor
-		// 那么很明显，这个是处理@Autowired注解的，所以我们可以理解为这个方法是在处理构造方法上的@Autowired注解
-		// 如果这么理解的话，可以看出来，这个方法主要作用并不是“推断”，因为我们所理解的推断是“推理决断”，从多个选择一个
-		// 所以我们就可以把当前这个方法里面处理构造方法上的Autowired
-		// 那么这个方法的功能，我们就好理解了：
-		// 1. 只能有一个@Autowired(required=true)的构造方法，有多个会报错，如果是这种情况，那么就应该这个构造方法来实例化对象
-		// 2. 可以有多个@Autowired(required=false)的构造方法，如果是这种情况，那么还不确定到底应该用哪个构造方法来实例化对象，
-		// 所以，如果是这种情况，我们还需要把无参构造方法加到candidateConstructors集合中，一起作为候选构造方法
-		// 3. 如果没有@Autowired的构造方法，但是如果本来只有一个有参构造方法，则也表明了只有这个构造方法可用
-		// 4. 如果没有@Autowired的构造方法，并且有多个构造方法，则返回空
-
-		// 再总结一下，这个方法做一件事情，就是去找到，到底哪些构造方法是可用的
-		// 1. 程序员通过@Autowired注解指定的构造方法
-		// 2. 在没有指定时，如果这个类只有一个构造方法，那么就应该用这个构造方法
-		// 3. 否则，当前方法也不知道应该用哪个构造方法
+		// 要么返回一个required=true的构造方法
+		// 要么返回多个requreid=false+无参的构造方法
+		// 要么返回唯一的一个有参的构造方法
+		// 如果只有一个无参的构造方法，这里会返回null，外层逻辑会默认使用无参构造方法进行实例化
 		return (candidateConstructors.length > 0 ? candidateConstructors : null);
 	}
 
+	// 注入点进行注入
 	@Override
 	public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
 		// InjectionMetadata中保存了所有被@Autowired注解标注的属性/方法并封装成一个个的InjectedElement
 		InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
 		try {
-			// 按注入点进行注入
 			metadata.inject(bean, beanName, pvs);
 		}
 		catch (BeanCreationException ex) {
@@ -532,7 +523,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 			return InjectionMetadata.EMPTY;
 		}
 
-		//
+
 		List<InjectionMetadata.InjectedElement> elements = new ArrayList<>();
 		Class<?> targetClass = clazz;
 
@@ -541,6 +532,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 
 			// 遍历属性，看是否有@Autowired，@Value，@Inject注解
 			ReflectionUtils.doWithLocalFields(targetClass, field -> {
+				//
 				MergedAnnotation<?> ann = findAutowiredAnnotation(field);
 				// 如果存在@Autowired，@Value，@Inject注解其中一个
 				if (ann != null) {
@@ -580,7 +572,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 									method);
 						}
 					}
-					// 看是否有@required注解
+
 					boolean required = determineRequiredStatus(ann);
 					// 根据方法找出对应的属性
 					PropertyDescriptor pd = BeanUtils.findPropertyForMethod(bridgedMethod, clazz);
@@ -594,7 +586,6 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 		}
 		while (targetClass != null && targetClass != Object.class);
 
-		// 所有能够注入的属性集合对应的InjectionMetadata对象
 		return InjectionMetadata.forElements(elements, clazz);
 	}
 
@@ -807,7 +798,7 @@ public class AutowiredAnnotationBeanPostProcessor extends InstantiationAwareBean
 					currDesc.setContainingClass(bean.getClass());
 					descriptors[i] = currDesc;
 					try {
-						// 寻找bean
+						// 寻找bean @Autowired---->Type--->1
 						Object arg = beanFactory.resolveDependency(currDesc, beanName, autowiredBeans, typeConverter);
 						if (arg == null && !this.required) {
 							arguments = null;

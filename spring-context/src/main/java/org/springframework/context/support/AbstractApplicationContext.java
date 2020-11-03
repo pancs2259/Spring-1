@@ -521,8 +521,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 			prepareRefresh();
 
 			// Tell the subclass to refresh the internal bean factory.
-			// 刷新BeanFactory，得到一个空的BeanFactory
-			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();
+			// 刷新BeanFactory，得到一个空的BeanFactory-Default
+			ConfigurableListableBeanFactory beanFactory = obtainFreshBeanFactory();  // co
 
 			// Prepare the bean factory for use in this context.
 			// 准备BeanFactory
@@ -545,7 +545,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				// 而这6个中只有一个BeanFactoryPostProcessor：ConfigurationClassPostProcessor
 				// 这里会执行ConfigurationClassPostProcessor进行@Component的扫描，扫描得到BeanDefinition，并注册到beanFactory中
 				// 注意：扫描的过程中可能又会扫描出其他的BeanFactoryPostProcessor，那么这些BeanFactoryPostProcessor也得在这一步执行
-				invokeBeanFactoryPostProcessors(beanFactory);
+				invokeBeanFactoryPostProcessors(beanFactory);  //BeanDefinitionRegistryPostProcessor ,BeanFactoryPostProcessors
 
 				// Register bean processors that intercept bean creation.
 				// 从BeanFactory找出扫描得到得BeanPostProcessor，实例化并注册到BeanFactory中
@@ -622,7 +622,7 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		}
 
 		// Initialize any placeholder property sources in the context environment.
-		// 可以允许子容器设置一些内容到Environment中
+		// 可以允许子容器设置一些内容到Environment中  （key:value）
 		initPropertySources();
 
 		// Validate that all properties marked as required are resolvable:
@@ -931,6 +931,8 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 		initLifecycleProcessor();
 
 		// Propagate refresh to lifecycle processor first.
+		// 默认调用DefaultLifecycleProcessor的onRefresh方法
+		// 找出Lifecycle Bean执行start方法，默认情况下是没有Lifecycle Bean的，需要自己定义
 		getLifecycleProcessor().onRefresh();
 
 		// Publish the final event.

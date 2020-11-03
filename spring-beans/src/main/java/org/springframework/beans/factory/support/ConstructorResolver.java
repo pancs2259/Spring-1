@@ -136,17 +136,17 @@ class ConstructorResolver {
 		ArgumentsHolder argsHolderToUse = null;
 		Object[] argsToUse = null;
 
-		// 得到构造方法的参数，
+		// 是否通过getBean()方法指定了构造方法参数值
 		if (explicitArgs != null) {
-			// getBean()时传递了args参数时才进这里
 			argsToUse = explicitArgs;
 		}
 		else {
-			// 查看BeanDefinition中是否已经确定出来了所要使用的构造方法和构造方法的参数值（起到缓存的作用）
+			// 从缓存中获取构造方法和构造方法参数值
 			Object[] argsToResolve = null;
 			synchronized (mbd.constructorArgumentLock) {
 				constructorToUse = (Constructor<?>) mbd.resolvedConstructorOrFactoryMethod;
 
+				// 找到了mbd中缓存的构造方法
 				if (constructorToUse != null && mbd.constructorArgumentsResolved) {
 					// Found a cached constructor...
 					argsToUse = mbd.resolvedConstructorArguments;
@@ -161,10 +161,10 @@ class ConstructorResolver {
 			}
 		}
 
-		// 如果BeanDefinition中没有缓存应该使用的构造方法，或者缓存了构造方法但是没有缓存应该使用的构造方法参数值
+		// 如果待使用的构造方法为null，或待使用的构造方法参数为null
 		if (constructorToUse == null || argsToUse == null) {
 			// Take specified constructors, if any.
-			// chosenCtors表示所指定的构造方法，没有指定则获取beanClass中的所有的构造方法，作为候选者，从这些构造方法中选择一个构造方法
+			// chosenCtors表示所指定的构造方法，没有指定则获取beanClass中的所有的构造方法作为候选者，从这些构造方法中选择一个构造方法
 			Constructor<?>[] candidates = chosenCtors;
 			if (candidates == null) {
 				Class<?> beanClass = mbd.getBeanClass();
@@ -181,13 +181,12 @@ class ConstructorResolver {
 
 			// 有了构造方法之后，则进行自动推断
 
-			// 如果只有一个构造方法，并且没有指定构造方法参数值，并且是无参构造方法
+			// 如果只有一个构造方法，并且没有指定构造方法参数值，则需要判断是不是无参构造方法，如果是则可以使用无参构造方法进行实例化
 			if (candidates.length == 1 && explicitArgs == null && !mbd.hasConstructorArgumentValues()) {
 				Constructor<?> uniqueCandidate = candidates[0];
-				// 并且是无参的构造方法，则可以直接使用该无参构造方法进行实例化了
-				// 同时把该构造方法缓存到BeanDefinition中
 				if (uniqueCandidate.getParameterCount() == 0) {
 					synchronized (mbd.constructorArgumentLock) {
+						// 确定了构造方法之后进行缓存
 						mbd.resolvedConstructorOrFactoryMethod = uniqueCandidate;
 						mbd.constructorArgumentsResolved = true;
 						mbd.resolvedConstructorArguments = EMPTY_ARGS;
@@ -204,8 +203,7 @@ class ConstructorResolver {
 					mbd.getResolvedAutowireMode() == AutowireCapableBeanFactory.AUTOWIRE_CONSTRUCTOR);
 			ConstructorArgumentValues resolvedValues = null; // 记录解析后的构造方法参数值
 
-			int minNrOfArgs; // 表示最少的构造方法的参数个数，要么是用户指定的构造方法参数，要么是BeanDefinition中所指定的
-							 // 表示在选择构造方法时，选到的构造方法参数至少要能用上这些参数
+			int minNrOfArgs; // 表示所有构造方法中，参数个数最少的构造方法的参数个数是多少
 			if (explicitArgs != null) {
 				minNrOfArgs = explicitArgs.length;
 			}
@@ -214,11 +212,11 @@ class ConstructorResolver {
 				ConstructorArgumentValues cargs = mbd.getConstructorArgumentValues();
 				// 记录解析后的构造方法参数值
 				resolvedValues = new ConstructorArgumentValues();
-				// 解析BeanDefinition中所设置的构造方法参数值
+				// 解析BeanDefinition中所设置的构造方法参数值（index跳跃）
 				minNrOfArgs = resolveConstructorArguments(beanName, mbd, bw, cargs, resolvedValues);
 			}
 
-			// 按构造方法的参数个数的多少降序排序，参数个数多的在前
+			// 按构造方法的参数个数降序排序，参数个数多的在前
 			AutowireUtils.sortConstructors(candidates);
 
 			int minTypeDiffWeight = Integer.MAX_VALUE;
@@ -230,28 +228,25 @@ class ConstructorResolver {
 			for (Constructor<?> candidate : candidates) {
 				// 当前构造方法的参数个数
 				int parameterCount = candidate.getParameterCount();
-				// constructorToUse表示所指定的或找到的构造方法
-				// argsToUse表示所指定的或找到的构造方法参数值
-				// 如果构造方法也找到了，构造方法参数值也确定出来了，并且找到的构造方法参数值的个数大于当前遍历到的构造方法参数值，则推出循环，表示确定了构造方法
-				// 如果是参数个数相等的话，则继续判断当前构造方法是不是比之前的那个更合适
+
+				// 已经找到了一个带使用的构造方法已经参数，并且该参数个数大于当前遍历的，则不用继续遍历了
 				if (constructorToUse != null && argsToUse != null && argsToUse.length > parameterCount) {
 					// Already found greedy constructor that can be satisfied ->
 					// do not look any further, there are only less greedy constructors left.
 					break;
 				}
-				// 如果构造方法参数小于minNrOfArgs，
+				// 在遍历某个构造方法时，如果参数个数小于用于所指定的参数个数，则忽略该构造方法
 				if (parameterCount < minNrOfArgs) {
 					continue;
 				}
 
-				// 到这里，要么还没确定构造方法的参数值， constructorToUse或argsToUse等于空
-				// 要么已经确定了一个构造方法， constructorToUse和argsToUse不等于null，但是当前遍历到的构造方法的参数个数和argsToUse相等
 
-				// 检查当前遍历的构造方法是否适合
 				ArgumentsHolder argsHolder;
+
+				// 当前遍历到的某个构造方法的参数类型
 				Class<?>[] paramTypes = candidate.getParameterTypes();
 
-				// 如果不是调用getBean方法时所指定的构造方法参数值，那么则根据构造方法参数类型找值
+				// 没有通过getBean()方法指定构造方法参数值
 				if (resolvedValues != null) {
 					try {
 						// 获取参数名
@@ -286,22 +281,27 @@ class ConstructorResolver {
 					}
 				}
 				else {
+					// 通过getBean()方法指定了构造方法参数值
+
 					// Explicit arguments given -> arguments length must match exactly.
-					// 如果getBean提供的参数个数不等于当前构造方法的参数个数，则当前构造方法不合适
 					if (parameterCount != explicitArgs.length) {
 						continue;
 					}
+					// 如果参数个数匹配，则把所有参数值封装为一个ArgumentsHolder对象
 					argsHolder = new ArgumentsHolder(explicitArgs);
 				}
 
-				// 确定了当前构造方法的参数值之后，目的是需要记录一下constructorToUse
-				// 这里还需要判断一下，因为可能存在两个构造方法都能符合上面的逻辑，那么到底用哪一个呢？
+				// 执行到这里，表示当前构造方法可用，并且也找到了对应的构造方法参数值
+				// 但是还需要判断，当前构造方法是不是最合适的，也许还有另外的构造方法更合适
 
-				// 根据参数类型计算权重
+				// 根据参数类型和参数值计算权重
+				// Lenient宽松，默认宽松模式是开启的
+				// 在宽松模式下，会判断每个参数值的类型和当前构造方法的参数类型的距离
+				// 在非宽松模式下，会忽略每个参数值的类型和当前构造方法的参数类型的距离，只要是父子关系距离是一样的
 				int typeDiffWeight = (mbd.isLenientConstructorResolution() ?
 						argsHolder.getTypeDifferenceWeight(paramTypes) : argsHolder.getAssignabilityWeight(paramTypes));
 				// Choose this constructor if it represents the closest match.
-				// 取参数类型权重较小的构造方法
+				// 如果当前构造方法的权重比较小，则表示当前构造方法更合适，将当前构造方法和所找到参数值作为待使用的，遍历下一个构造方法
 				if (typeDiffWeight < minTypeDiffWeight) {
 					constructorToUse = candidate;
 					argsHolderToUse = argsHolder;
@@ -310,7 +310,7 @@ class ConstructorResolver {
 					ambiguousConstructors = null;
 				}
 				else if (constructorToUse != null && typeDiffWeight == minTypeDiffWeight) {
-					// 如果权重一样，则记录在ambiguousConstructors中
+					// 如果权重一样，则记录在ambiguousConstructors中，继续遍历下一个构造方法
 					if (ambiguousConstructors == null) {
 						ambiguousConstructors = new LinkedHashSet<>();
 						ambiguousConstructors.add(constructorToUse);
@@ -334,7 +334,7 @@ class ConstructorResolver {
 						"(hint: specify index/type/name arguments for simple parameters to avoid type ambiguities)");
 			}
 			// 如果存在权重一样的构造方法并且不是宽松模式，也报错，因为权重一样，Spring不知道该用哪个
-			// 如果是宽松模式则不会报错，Spring会用第一个
+			// 如果是宽松模式则不会报错，Spring会用找到的第一个
 			else if (ambiguousConstructors != null && !mbd.isLenientConstructorResolution()) {
 				throw new BeanCreationException(mbd.getResourceDescription(), beanName,
 						"Ambiguous constructor matches found in bean '" + beanName + "' " +
@@ -342,7 +342,9 @@ class ConstructorResolver {
 						ambiguousConstructors);
 			}
 
+			// 如果不是通过getBean()方法指定的参数，那么就把找到的构造方法参数进行缓存
 			if (explicitArgs == null && argsHolderToUse != null) {
+				// 缓存找到的构造方法
 				argsHolderToUse.storeCache(mbd, constructorToUse);
 			}
 		}
@@ -688,6 +690,7 @@ class ConstructorResolver {
 
 			if (explicitArgs == null && argsHolderToUse != null) {
 				mbd.factoryMethodToIntrospect = factoryMethodToUse;
+				//
 				argsHolderToUse.storeCache(mbd, factoryMethodToUse);
 			}
 		}

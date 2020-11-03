@@ -250,6 +250,7 @@ class ConfigurationClassParser {
 		}
 		while (sourceClass != null);
 
+		// 把当前配置类存在configurationClasses里面
 		this.configurationClasses.put(configClass, configClass);
 	}
 
@@ -326,6 +327,7 @@ class ConfigurationClassParser {
 			Class<? extends BeanDefinitionReader> readerClass = importResource.getClass("reader");
 			for (String resource : resources) {
 				String resolvedResource = this.environment.resolveRequiredPlaceholders(resource);
+
 				configClass.addImportedResource(resolvedResource, readerClass);
 			}
 		}

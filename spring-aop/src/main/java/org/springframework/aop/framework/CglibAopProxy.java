@@ -162,7 +162,7 @@ class CglibAopProxy implements AopProxy, Serializable {
 		}
 
 		try {
-			Class<?> rootClass = this.advised.getTargetClass();	//
+			Class<?> rootClass = this.advised.getTargetClass();	//拿到被代理的类
 			Assert.state(rootClass != null, "Target class must be available for creating a CGLIB proxy");
 
 			Class<?> proxySuperClass = rootClass;
@@ -686,6 +686,13 @@ class CglibAopProxy implements AopProxy, Serializable {
 				}
 				else {
 					// We need to create a method invocation...
+					// proxy： 代理类产生的代理对象
+					// target: 被代理的目标对象
+					// method: 当前正在执行的目标类中的方法对象
+					// args: 当前正在执行的方法参数
+					// targetClass: 被代理的类
+					// chain: 和当前被代理的类和正在执行的方法匹配的所有的advisor
+					// methodProxy：当前正在执行的代理类中的方法对象
 					retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
 				}
 				retVal = processReturnType(proxy, target, method, retVal);

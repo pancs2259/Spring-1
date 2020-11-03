@@ -561,7 +561,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 					// Direct match for exposed instance?
 					return true;
 				}
-				// 如果当前类型有泛型，比如
+				// 如果当前类型有泛型
 				else if (typeToMatch.hasGenerics() && containsBeanDefinition(beanName)) {
 					// Generics potentially only match on the target class, not on the proxy...
 					RootBeanDefinition mbd = getMergedLocalBeanDefinition(beanName);
@@ -587,7 +587,7 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 		}
 		else if (containsSingleton(beanName) && !containsBeanDefinition(beanName)) {
 			// null instance registered
-			// 可能直接利用了BeanFactory的register方法注册了一个bean，beanName有值，但是对于的是null。
+			// 可能直接利用了BeanFactory的register方法注册了一个bean，beanName有值，但是对应的是null。
 			// 表示根据beanName找到的bean为null，所以不匹配
 			return false;
 		}
@@ -1919,6 +1919,10 @@ public abstract class AbstractBeanFactory extends FactoryBeanRegistrySupport imp
 	 * @see org.springframework.beans.factory.config.DestructionAwareBeanPostProcessor
 	 */
 	protected boolean requiresDestruction(Object bean, RootBeanDefinition mbd) {
+		// 判断某个Bean是否拥有销毁方法
+		// 1. 实现了DisposableBean接口或AutoCloseable接口
+		// 2. BeanDefinition中定义了destroyMethodName
+		// 3. 类中是否存在@PreDestroy注解的方法
 		return (bean.getClass() != NullBean.class &&
 				(DisposableBeanAdapter.hasDestroyMethod(bean, mbd) || (hasDestructionAwareBeanPostProcessors() &&
 						DisposableBeanAdapter.hasApplicableProcessors(bean, getBeanPostProcessors()))));

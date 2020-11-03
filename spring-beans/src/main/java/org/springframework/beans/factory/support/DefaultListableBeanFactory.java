@@ -505,6 +505,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 		// 从map里没有找到，则调用doGetBeanNamesForType去找，找到结果后缓存
 		resolvedBeanNames = doGetBeanNamesForType(ResolvableType.forRawClass(type), includeNonSingletons, true);
+
 		if (ClassUtils.isCacheSafe(type, getBeanClassLoader())) {
 			cache.put(type, resolvedBeanNames);
 		}
@@ -531,14 +532,14 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						boolean isFactoryBean = isFactoryBean(beanName, mbd);
 						BeanDefinitionHolder dbd = mbd.getDecoratedDefinition();
 						boolean matchFound = false;
-						//
+
 						boolean allowFactoryBeanInit = allowEagerInit || containsSingleton(beanName);
 						boolean isNonLazyDecorated = dbd != null && !mbd.isLazyInit();
 						if (!isFactoryBean) {
 							// 包括非单例，则直接匹配
 							// 如果不包括非单例，则表示只允许单例，则判断当前beanName对应的是不是单例bean
 							if (includeNonSingletons || isSingleton(beanName, mbd, dbd)) {
-								// beanName对应的bean的类型和需要匹配的type是否匹配
+								// beanName对应的bean的类型和type是否匹配
 								matchFound = isTypeMatch(beanName, type, allowFactoryBeanInit);
 							}
 						}
@@ -918,6 +919,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			}
 		}
 
+		// 创建完所有的单例bean之后，判断某个单例bean是不是SmartInitializingSingleton，如果是执行afterSingletonsInstantiated()方法
+		// EventListenerMethodProcessor
+
 		// Trigger post-initialization callback for all applicable beans...
 		for (String beanName : beanNames) {
 			Object singletonInstance = getSingleton(beanName);
@@ -1288,6 +1292,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 					// 解析Spring EL表达式，解析"#"符号（可以进行运算，可以写某个bean的名字）
 					value = evaluateBeanDefinitionString(strVal, bd);
 				}
+
 				TypeConverter converter = (typeConverter != null ? typeConverter : getTypeConverter());
 				try {
 					return converter.convertIfNecessary(value, type, descriptor.getTypeDescriptor());
@@ -1543,7 +1548,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 		}
 
 		// 对候选bean进行过滤，首先候选者不是自己，然后候选者是支持自动注入给其他bean的
-		for (String candidate : candidateNames) {
+		for (String candidate : candidateNames) {  // beanName orderSer1 order2 oser
 			// isAutowireCandidate方法中会去判断候选者是否和descriptor匹配
 			if (!isSelfReference(beanName, candidate) && isAutowireCandidate(candidate, descriptor)) {
 				addCandidateEntry(result, candidate, descriptor, requiredType);
@@ -1691,7 +1696,7 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 			String candidateBeanName = entry.getKey();
 			Object beanInstance = entry.getValue();
 			if (beanInstance != null) {
-				Integer candidatePriority = getPriority(beanInstance);
+				Integer candidatePriority = getPriority(beanInstance);  // OrderService @Priority(1)  1
 				if (candidatePriority != null) {
 					if (highestPriorityBeanName != null) {
 						if (candidatePriority.equals(highestPriority)) {
@@ -1829,7 +1834,9 @@ public class DefaultListableBeanFactory extends AbstractAutowireCapableBeanFacto
 						super.resolveCandidate(beanName, requiredType, beanFactory));
 			}
 		};
+
 		Object result = doResolveDependency(descriptorToUse, beanName, null, null);
+
 		return (result instanceof Optional ? (Optional<?>) result : Optional.ofNullable(result));
 	}
 

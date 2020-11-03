@@ -313,7 +313,7 @@ public class MethodInvoker {
 			if (args[i] != null) {
 				// 当前参数类型
 				Class<?> paramType = paramTypes[i];
-				// 对应的参数值的父类
+				// 对应的参数值的父类   user---superClass
 				Class<?> superClass = args[i].getClass().getSuperclass();
 				// 遍历父类
 				while (superClass != null) {

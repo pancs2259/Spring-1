@@ -284,7 +284,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 			// 2. 存在@Component，@ComponentScan，@Import，@ImportResource，或者
 			// 3. 存在@Bean标注的方法
 			else if (ConfigurationClassUtils.checkConfigurationClassCandidate(beanDef, this.metadataReaderFactory)) {
-				configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
+					configCandidates.add(new BeanDefinitionHolder(beanDef, beanName));
 			}
 		}
 
@@ -331,8 +331,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 		Set<BeanDefinitionHolder> candidates = new LinkedHashSet<>(configCandidates);
 		Set<ConfigurationClass> alreadyParsed = new HashSet<>(configCandidates.size());
 		do {
-			// 对配置类进行解析
-			parser.parse(candidates);
+			// 对配置BeanDefinition进行解析，解析完后会生成ConfigurationClass
+			parser.parse(candidates);   //AppConfig.class
 			parser.validate();
 
 			Set<ConfigurationClass> configClasses = new LinkedHashSet<>(parser.getConfigurationClasses());
@@ -428,6 +428,8 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 				configBeanDefs.put(beanName, (AbstractBeanDefinition) beanDef);
 			}
 		}
+
+		// 加了@Configuration注解的配置类的BeanDefinition
 		if (configBeanDefs.isEmpty()) {
 			// nothing to enhance -> return immediately
 			return;
@@ -449,7 +451,7 @@ public class ConfigurationClassPostProcessor implements BeanDefinitionRegistryPo
 							"enhanced class '%s'", entry.getKey(), configClass.getName(), enhancedClass.getName()));
 				}
 				// 将增强类设置给beanDefinition，后续基于BeanDefinition产生的bean就是增加类的对象了
-				beanDef.setBeanClass(enhancedClass);
+				beanDef.setBeanClass(enhancedClass); // AppConfig--->Bean  代理对象
 			}
 		}
 	}

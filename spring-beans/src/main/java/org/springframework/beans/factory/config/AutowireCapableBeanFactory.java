@@ -403,7 +403,8 @@ public interface AutowireCapableBeanFactory extends BeanFactory {
 	 * @see DependencyDescriptor
 	 *
 	 * DependencyDescriptor表示依赖，需要给这个依赖注入值，这个依赖可能是field/method/constructor
-	 *
+	 * requestingBeanName表示当前正在进行依赖注入的是哪个bean
+	 * autowiredBeanNames用来记录所匹配的用来注入给当前依赖的beanName，会用来进行缓存
 	 */
 	@Nullable
 	Object resolveDependency(DependencyDescriptor descriptor, @Nullable String requestingBeanName,

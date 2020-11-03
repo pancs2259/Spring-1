@@ -1,10 +1,36 @@
 package com.luban;
 
 
-import org.springframework.context.annotation.ComponentScan;
+import com.luban.entity.User;
+import com.luban.service.LubanBeanDefinitionRegistar;
+import com.luban.service.UserService;
+import org.apache.ibatis.annotations.Mapper;
+import org.mybatis.spring.SqlSessionFactoryBean;
+import org.mybatis.spring.annotation.MapperScan;
+import org.mybatis.spring.mapper.MapperScannerConfigurer;
+import org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator;
+import org.springframework.beans.factory.annotation.Autowire;
+import org.springframework.context.annotation.*;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 
-@ComponentScan("com.luban")
-public class AppConfig {
+import javax.sql.DataSource;
+
+
+@ComponentScan(value = "com.luban")
+public class AppConfig {  // AppConfig对象.user()--->单例池
+	                       // AppConfig对象.userService()--->AppConfig对象.user()-->user---userserivce--->单例池
+
+
+//	@Bean
+//	public MapperScannerConfigurer configurer() {
+//		MapperScannerConfigurer configurer = new MapperScannerConfigurer();
+//		configurer.setBasePackage("com.luban");
+//		return configurer;
+//	}
+
+
+
 
 
 	//	@Bean
@@ -41,6 +67,8 @@ public class AppConfig {
 //		return customEditorConfigurer;
 //	}
 
+	// String-->OrderService
+
 //	@Bean
 //	public ConversionServiceFactoryBean conversionService() {
 //		ConversionServiceFactoryBean conversionServiceFactoryBean = new ConversionServiceFactoryBean();
@@ -69,27 +97,16 @@ public class AppConfig {
 //	}
 
 
-	//
 //	@Bean
 //	public DataSource dataSource() {
 //		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 //		dataSource.setUrl("jdbc:mysql://192.168.99.100:33306/luban");
 //		dataSource.setUsername("root");
 //		dataSource.setPassword("123456");
-
-
-//		try {
-//			Connection connection = dataSource.getConnection();
-//			PreparedStatement insert = connection.prepareStatement("insert");
-//			insert.execute();
-//			connection.commit();
-//		} catch (SQLException e) {
-//			e.printStackTrace();
-//		}
-
 //		return dataSource;
 //	}
 
+	// 事务管理器
 //	@Bean
 //	public PlatformTransactionManager transactionManager() {
 //		DataSourceTransactionManager transactionManager = new DataSourceTransactionManager();
@@ -97,16 +114,11 @@ public class AppConfig {
 //
 //		return transactionManager;
 //	}
-//
+
 //	@Bean
 //	public SqlSessionFactoryBean sqlSessionFactory() {
 //		SqlSessionFactoryBean sessionFactoryBean = new SqlSessionFactoryBean();
 //		sessionFactoryBean.setDataSource(dataSource());
-//		try {
-//			sessionFactoryBean.setConfigurationProperties(PropertiesLoaderUtils.loadAllProperties("db.properties"));
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
 //		return sessionFactoryBean;
 //	}
 

@@ -122,6 +122,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 				new LazySingletonAspectInstanceFactoryDecorator(aspectInstanceFactory);
 
 		List<Advisor> advisors = new ArrayList<>();
+		// 遍历所有非@PointCut的方法，获取@Before、@After等注解中的表达式切点，加上当前方法（也就是代理逻辑）一起封装为一个Advisor
 		for (Method method : getAdvisorMethods(aspectClass)) {
 			Advisor advisor = getAdvisor(method, lazySingletonAspectInstanceFactory, advisors.size(), aspectName);
 			if (advisor != null) {
@@ -149,9 +150,9 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 
 	private List<Method> getAdvisorMethods(Class<?> aspectClass) {
 		final List<Method> methods = new ArrayList<>();
+		// 遍历所有方法，把不存在@Pointcut注解的方法返回
 		ReflectionUtils.doWithMethods(aspectClass, method -> {
 			// Exclude pointcuts
-			// 除开@Pointcut注解都拿到，作为dvisorMethods
 			if (AnnotationUtils.getAnnotation(method, Pointcut.class) == null) {
 				methods.add(method);
 			}
@@ -196,9 +197,7 @@ public class ReflectiveAspectJAdvisorFactory extends AbstractAspectJAdvisorFacto
 		if (expressionPointcut == null) {
 			return null;
 		}
-		// 构造一个Advisor，包含：
-		// expressionPointcut：@Around等注解中所定义的表达式
-		// candidateAdviceMethod：@Around等注解所注解的方法
+		// 构造一个Advisor，封装了切点表达式和当前方法
 		return new InstantiationModelAwarePointcutAdvisorImpl(expressionPointcut, candidateAdviceMethod,
 				this, aspectInstanceFactory, declarationOrderInAspect, aspectName);
 	}

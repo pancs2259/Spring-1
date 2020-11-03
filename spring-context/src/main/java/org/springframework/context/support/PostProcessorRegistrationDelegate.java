@@ -140,6 +140,8 @@ final class PostProcessorRegistrationDelegate {
 				currentRegistryProcessors.clear();
 			}
 
+			// =======BeanDefinition  解析配置类（扫描，- @Bean, @Import），手动，接口， @Import
+
 			// Now, invoke the postProcessBeanFactory callback of all processors handled so far.
 			// 执行完BeanDefinitionRegistryPostProcessor的postProcessBeanDefinitionRegistry方法后，
 			// 再执行BeanDefinitionRegistryPostProcessor的postProcessBeanFactory方法
@@ -257,7 +259,7 @@ final class PostProcessorRegistrationDelegate {
 		List<String> orderedPostProcessorNames = new ArrayList<>();
 		List<String> nonOrderedPostProcessorNames = new ArrayList<>();
 		for (String ppName : postProcessorNames) {
-			if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {
+			if (beanFactory.isTypeMatch(ppName, PriorityOrdered.class)) {  //PriorityOrdered  PriorityOrdered  @Order  @Priority
 				BeanPostProcessor pp = beanFactory.getBean(ppName, BeanPostProcessor.class);
 				priorityOrderedPostProcessors.add(pp);
 				if (pp instanceof MergedBeanDefinitionPostProcessor) {
