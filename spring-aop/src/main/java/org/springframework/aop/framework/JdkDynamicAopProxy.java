@@ -120,6 +120,8 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 		}
 		// 获取生成代理对象所需要实现的接口
 		Class<?>[] proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
+
+		// 判断这些接口中有没有定义equals方法，hashcode方法
 		findDefinedEqualsAndHashCodeMethods(proxiedInterfaces);
 		// 针对所指定的接口生成代理对象，包括用户所添加的接口以及SpringProxy、Advised、DecoratingProxy
 		// 所以生成的代理对象可以强制转换成任意一个接口类型
@@ -184,6 +186,7 @@ final class JdkDynamicAopProxy implements AopProxy, InvocationHandler, Serializa
 
 			Object retVal;
 
+			//  advised就是ProxyFactory
 			if (this.advised.exposeProxy) {
 				// Make invocation available if necessary.
 				oldProxy = AopContext.setCurrentProxy(proxy);

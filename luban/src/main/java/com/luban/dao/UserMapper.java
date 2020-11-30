@@ -1,13 +1,14 @@
 package com.luban.dao;
 
-import com.luban.entity.Luban;
-import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Select;
 
-@Mapper
 public interface UserMapper {
 
-  @Select("select 'test'")
-  String selectById();
+	@Insert("insert into t1 values(1,1,1,1,'1')")
+	void insert1();
+
+	@Insert("insert into t1 values(2,2,2,2,'2')")
+	void insert2();
 
 }

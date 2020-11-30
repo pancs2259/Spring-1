@@ -610,7 +610,6 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			// 构造一个对象工厂添加到singletonFactories中
 			// 第四次调用后置处理器
 			addSingletonFactory(beanName, () -> getEarlyBeanReference(beanName, mbd, bean));  // AService
-//			addEarlySingleton(beanName, bean);
 		}
 
 		// Initialize the bean instance.
@@ -618,9 +617,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 		Object exposedObject = bean;
 		try {
 			// 3、填充属性 @Autowired
-			populateBean(beanName, mbd, instanceWrapper);
+			populateBean(beanName, mbd, instanceWrapper);  //
 
-			// 4、 初始化 和 BeanPostProcessor 正常AOP
+			// 4、 初始化 和 BeanPostProcessor 正常AOP  BeanPostProcessor
 			exposedObject = initializeBean(beanName, exposedObject, mbd);
 		}
 		catch (Throwable ex) {
@@ -639,9 +638,9 @@ public abstract class AbstractAutowireCapableBeanFactory extends AbstractBeanFac
 			if (earlySingletonReference != null) {
 				// 如果提前暴露的对象和经过了完整的生命周期后的对象相等，则把代理对象赋值给exposedObject
 				// 最终会添加到singletonObjects中去
-				if (exposedObject == bean) {
+				if (exposedObject == bean) {  //
 					exposedObject = earlySingletonReference;
-			}
+				}
 				// 如果提前暴露的对象和经过了完整的生命周期后的对象不相等
 				// allowRawInjectionDespiteWrapping表示在循环依赖时，只能
 				else if (!this.allowRawInjectionDespiteWrapping && hasDependentBean(beanName)) {

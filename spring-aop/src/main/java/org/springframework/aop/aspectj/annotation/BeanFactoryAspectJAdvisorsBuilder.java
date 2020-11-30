@@ -109,9 +109,10 @@ public class BeanFactoryAspectJAdvisorsBuilder {
 							AspectMetadata amd = new AspectMetadata(beanType, beanName);
 							//
 							if (amd.getAjType().getPerClause().getKind() == PerClauseKind.SINGLETON) {
+
 								MetadataAwareAspectInstanceFactory factory =
 										new BeanFactoryAspectInstanceFactory(this.beanFactory, beanName);
-								// 解析Advisor （解析@befor，@after这些注解）
+								// 解析Advisor （解析@before，@after这些注解）
 								List<Advisor> classAdvisors = this.advisorFactory.getAdvisors(factory);
 								if (this.beanFactory.isSingleton(beanName)) {
 									this.advisorsCache.put(beanName, classAdvisors);

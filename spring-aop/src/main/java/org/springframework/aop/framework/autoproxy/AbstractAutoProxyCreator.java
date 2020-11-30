@@ -367,7 +367,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 			return bean;
 		}
 
-		// 如果是基础bean，或者@Aspect修饰的类不需要被代理
+		// 先判断当前bean是不是要进行AOP，比如当前bean的类型是Pointcut、Advice、Advisor等那就不需要进行AOP
 		if (isInfrastructureClass(bean.getClass()) || shouldSkip(bean.getClass(), beanName)) {
 			this.advisedBeans.put(cacheKey, Boolean.FALSE);
 			return bean;
@@ -483,7 +483,7 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 		}
 
 		ProxyFactory proxyFactory = new ProxyFactory();
-		proxyFactory.copyFrom(this);	// 从this复制配置参数
+		proxyFactory.copyFrom(this);	// 复制配置参数
 		// 是否指定了必须用cglib进行代理
 		if (!proxyFactory.isProxyTargetClass()) {
 			// 如果没有指定，那么则判断是不是应该进行cglib代理（判断BeanDefinition中是否指定了要用cglib）
@@ -491,12 +491,13 @@ public abstract class AbstractAutoProxyCreator extends ProxyProcessorSupport
 				proxyFactory.setProxyTargetClass(true);
 			}
 			else {
-				// 是否进行jdk动态代理
+				// 是否进行jdk动态代理，如果当前beanClass实现了某个接口，那么则会使用JDK动态代理
 				evaluateProxyInterfaces(beanClass, proxyFactory); // 判断beanClass有没有实现接口
 			}
 		}
 
 
+		// 将commonInterceptors和specificInterceptors整合再一起
 		Advisor[] advisors = buildAdvisors(beanName, specificInterceptors);
 
 		proxyFactory.addAdvisors(advisors);	// 向ProxyFactory中添加advisor

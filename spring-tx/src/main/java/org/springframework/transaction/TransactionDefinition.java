@@ -134,7 +134,8 @@ public interface TransactionDefinition {
 	 * nested transactions as well.
 	 * @see org.springframework.jdbc.datasource.DataSourceTransactionManager
 	 */
-	//
+	// 和PROPAGATION_REQUIRED类似，如果当前存在事务，则加入当前事务，如果不存在当前事务，则创建一个新事务
+	// 只不过它利用的是savepoint来达到在当前事务中运行的目的
 	int PROPAGATION_NESTED = 6;
 
 
